@@ -12,33 +12,29 @@ const settingsRoutes = require('./routes/settings.routes');
 const app = express();
 
 /* ============================================================
-   ✅ إعداد الـ CORS (أول حاجة قبل أي Middleware أو Routes)
+   ✅ إعداد CORS — لازم يكون قبل أي Middleware أو Routes
 ============================================================ */
 const allowedOrigins = [
-  'https://weather-app2-front.vercel.app', // دومين الفرونت على Vercel
+  'https://weather-app2-front.vercel.app', // الفرونت على Vercel
   'http://localhost:4200' // للتطوير المحلي
 ];
 
-// السماح بطلبات الـ OPTIONS (Preflight)
-app.options('*', cors());
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // السماح لو الـ request جاي من origin مصرح بيه أو مفيش origin (زي Postman)
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 204
-  })
-);
+  // ✅ التعامل مع طلبات OPTIONS (Preflight)
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
 
 /* ============================================================
    ✅ Middleware أساسية
